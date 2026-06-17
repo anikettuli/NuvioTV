@@ -130,3 +130,25 @@
 -keepclassmembers class com.fasterxml.jackson.** { *; }
 -dontwarn java.beans.ConstructorProperties
 -dontwarn java.beans.Transient
+
+# ── AGP 9 / R8 default-package repackaging defenses ───────────────────────────
+# R8 in AGP 9 enables default-package repackaging by default (-repackageclasses).
+# These keep rules protect reflection-driven consumers whose class identity must
+# survive minification. Debug builds have isMinifyEnabled=false, so these only
+# take effect for minified (release/benchmark) builds — flagged for device QA.
+
+# CloudStream plugin system: the entire com.lagradost namespace is referenced by
+# DEX extensions loaded at runtime via DexClassLoader. Keep broadly so R8 cannot
+# rename or repackage any host class an extension might resolve by name.
+-keep class com.lagradost.** { *; }
+-keepclassmembers class com.lagradost.** { *; }
+
+# Gson model/reflection classes: Gson serializes via reflection on field names,
+# so model classes and the Gson runtime must retain their original names.
+-keep class com.google.gson.** { *; }
+-keepclassmembers class com.google.gson.** { *; }
+
+# Conscrypt: loaded reflectively as a security provider (com.lagradost extensions
+# install it as the TLS provider). Keep so the provider class lookup succeeds.
+-keep class org.conscrypt.** { *; }
+-keepclassmembers class org.conscrypt.** { *; }

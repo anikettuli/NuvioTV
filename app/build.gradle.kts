@@ -1,6 +1,8 @@
 ﻿plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    // AGP 9 provides built-in Kotlin support; the org.jetbrains.kotlin.android
+    // plugin is no longer applied (it would conflict with AGP's `kotlin`
+    // extension). Compose and serialization compiler plugins are still required.
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.androidx.baselineprofile)
     alias(libs.plugins.hilt)
@@ -82,12 +84,12 @@ val releaseStorePasswordValue = env("NUVIO_RELEASE_STORE_PASSWORD")
 
 android {
     namespace = "com.nuvio.tv"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.nuvio.tv"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1025
         versionName = "0.7.8-beta"
 
@@ -242,13 +244,13 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
         isCoreLibraryDesugaringEnabled = true
     }
     kotlin {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
     buildFeatures {
@@ -314,7 +316,7 @@ baselineProfile {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
-    val composeBom = platform("androidx.compose:compose-bom:2026.01.01")
+    val composeBom = platform("androidx.compose:compose-bom:2026.05.00")
 
     // Source-retention nullness annotations (MonotonicNonNull / RequiresNonNull /
     // EnsuresNonNull) used by the vendored Matroska extractor in
@@ -343,6 +345,11 @@ dependencies {
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    // Hilt's annotation processor reads Kotlin class metadata via kotlin-metadata-jvm,
+    // which is unshaded since Dagger 2.57. The version bundled with Hilt 2.59.2 only
+    // understands metadata up to Kotlin 2.3; override it on the KSP processor
+    // classpath so Hilt can read Kotlin 2.4.0-compiled classes.
+    ksp("org.jetbrains.kotlin:kotlin-metadata-jvm:${libs.versions.kotlin.get()}")
     implementation(libs.hilt.navigation.compose)
 
     // Networking
@@ -460,7 +467,7 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
-    testImplementation("io.mockk:mockk:1.13.12")
+    testImplementation("io.mockk:mockk:1.14.3")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
