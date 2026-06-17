@@ -26,6 +26,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
+// bind() launches a never-completing MutableStateFlow (targetFlow) collector. These tests bind the
+// controller to runTest's backgroundScope so the collector is cancelled when the test body finishes,
+// instead of leaking past runTest's timeout (UncompletedCoroutinesError).
 class PosterOptionsControllerShowTest {
 
     @Before
@@ -47,7 +50,7 @@ class PosterOptionsControllerShowTest {
             isInLibrary = true,
             isWatched = false
         )
-        controller.bind(this)
+        controller.bind(backgroundScope)
 
         controller.show(samplePreview(), addonBaseUrl = null)
         advanceUntilIdle()
@@ -65,7 +68,7 @@ class PosterOptionsControllerShowTest {
             isInLibrary = false,
             isWatched = false
         )
-        controller.bind(this)
+        controller.bind(backgroundScope)
 
         controller.show(samplePreview(), addonBaseUrl = null)
         advanceUntilIdle()
@@ -82,7 +85,7 @@ class PosterOptionsControllerShowTest {
             isInLibrary = false,
             isWatched = true
         )
-        controller.bind(this)
+        controller.bind(backgroundScope)
 
         controller.show(samplePreview(), addonBaseUrl = null)
         advanceUntilIdle()
@@ -121,7 +124,7 @@ class PosterOptionsControllerShowTest {
             watchedSeriesStateHolder = watchedSeriesStateHolder,
             tmdbService = tmdbService
         )
-        controller.bind(this)
+        controller.bind(backgroundScope)
 
         controller.show(samplePreview(id = "tmdb:111"), addonBaseUrl = null)
         controller.show(samplePreview(id = "tmdb:222"), addonBaseUrl = null)
@@ -162,7 +165,7 @@ class PosterOptionsControllerShowTest {
             watchedSeriesStateHolder = watchedSeriesStateHolder,
             tmdbService = tmdbService
         )
-        controller.bind(this)
+        controller.bind(backgroundScope)
 
         controller.show(samplePreview(id = tmdbId), addonBaseUrl = null)
         advanceUntilIdle()

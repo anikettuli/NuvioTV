@@ -9,7 +9,6 @@ import com.nuvio.tv.domain.model.StreamBehaviorHints
 import com.nuvio.tv.domain.model.StreamDebridCacheState
 import com.nuvio.tv.domain.model.StreamDebridCacheStatus
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
 
 class StreamAutoPlaySelectorTest {
@@ -178,7 +177,11 @@ class StreamAutoPlaySelectorTest {
     }
 
     @Test
-    fun `manual mode remains manual even with matching bingeGroup`() {
+    fun `binge group match overrides manual mode`() {
+        // Production intentionally lets a binge-group match auto-play even in MANUAL mode
+        // ("Binge group matching takes priority over mode" — StreamAutoPlaySelector.kt:83-90).
+        // Because preferBingeGroupInSelection is true and bingeGroupOnly is left false, the
+        // matching stream is returned rather than null.
         val matched = stream(
             addonName = "AddonA",
             url = "https://example.com/match.m3u8",
@@ -197,7 +200,7 @@ class StreamAutoPlaySelectorTest {
             preferBingeGroupInSelection = true
         )
 
-        assertNull(selected)
+        assertEquals(matched, selected)
     }
 
     @Test

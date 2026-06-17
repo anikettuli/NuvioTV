@@ -5,13 +5,17 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
+import android.util.Log
 import androidx.tvprovider.media.tv.TvContractCompat
 import com.nuvio.tv.domain.model.WatchProgress
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
@@ -27,11 +31,28 @@ class AndroidTvChannelManagerTest {
 
     @Before
     fun setUp() {
+        // Accessing TvContractCompat.PreviewPrograms.CONTENT_URI runs its static initializer,
+        // which calls Uri.parse(...). In plain JVM unit tests that android stub throws, surfacing
+        // as ExceptionInInitializerError / NoClassDefFoundError. Stub Uri.parse so the static
+        // init (and the test's own Uri.parse calls) succeed. Log is stubbed because reconcile logs.
+        mockkStatic(Uri::class)
+        every { Uri.parse(any()) } returns mockk(relaxed = true)
+        mockkStatic(Log::class)
+        every { Log.d(any(), any<String>()) } returns 0
+        every { Log.w(any(), any<String>()) } returns 0
+        every { Log.w(any(), any<String>(), any()) } returns 0
+
         every { context.packageManager } returns packageManager
         every { context.contentResolver } returns contentResolver
         every { context.packageName } returns "com.nuvio.tv"
         every { context.getString(any<Int>()) } returns "Continue Watching"
         manager = AndroidTvChannelManager(context, prefs)
+    }
+
+    @After
+    fun tearDown() {
+        unmockkStatic(Uri::class)
+        unmockkStatic(Log::class)
     }
 
     @Test

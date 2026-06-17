@@ -1,6 +1,7 @@
 package com.nuvio.tv.core.trakt
 
 import android.content.Context
+import com.nuvio.tv.R
 import com.nuvio.tv.core.network.NetworkResult
 import com.nuvio.tv.data.local.AuthSessionNoticeDataStore
 import com.nuvio.tv.data.local.TraktAuthDataStore
@@ -30,11 +31,25 @@ import okhttp3.Headers.Companion.headersOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import retrofit2.Response
 
 class TraktPublicListSourceResolverTest {
     private val context = mockk<Context>(relaxed = true)
+
+    // The resolver formats list subtitles via appContext.getString(resId, count). A relaxed
+    // Context mock returns "" for those, so stub the two count strings to match the real
+    // resources ("%1$d items" / "%1$d likes") that the subtitle assertions look for.
+    @Before
+    fun setUp() {
+        every { context.getString(R.string.collections_editor_trakt_items_count, any()) } answers {
+            "${secondArg<Any>()} items"
+        }
+        every { context.getString(R.string.collections_editor_trakt_likes_count, any()) } answers {
+            "${secondArg<Any>()} likes"
+        }
+    }
 
     @Test
     fun `parseTraktListId accepts numeric ids and trakt urls`() {

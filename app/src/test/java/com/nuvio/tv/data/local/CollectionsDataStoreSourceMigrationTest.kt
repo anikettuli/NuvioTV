@@ -7,17 +7,31 @@ import com.nuvio.tv.domain.model.TmdbCollectionMediaType
 import com.nuvio.tv.domain.model.TmdbCollectionSource
 import com.nuvio.tv.domain.model.TmdbCollectionSourceType
 import com.nuvio.tv.domain.model.TraktCollectionSource
+import io.mockk.anyVararg
+import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 class CollectionsDataStoreSourceMigrationTest {
+    private val appContext = mockk<Context>(relaxed = true)
     private val store = CollectionsDataStore(
-        appContext = mockk<Context>(relaxed = true),
+        appContext = appContext,
         factory = mockk<ProfileDataStoreFactory>(relaxed = true),
         profileManager = mockk<ProfileManager>(relaxed = true)
     )
+
+    // validateCollectionsJson builds error messages via appContext.getString(resId, ...). A relaxed
+    // Context mock returns "" for those, so stub the missing-trakt-list-id error to match the real
+    // resource text that the assertion looks for ("... missing Trakt list ID").
+    @Before
+    fun setUp() {
+        every {
+            appContext.getString(com.nuvio.tv.R.string.collections_import_error_missing_trakt_list_id, *anyVararg())
+        } returns "Collection, folder, source: missing Trakt list ID"
+    }
 
     @Test
     fun `import converts legacy catalogSources to addon sources`() {
